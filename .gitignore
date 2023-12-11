@@ -5,3 +5,4 @@ __pycache__/
 old
 data
 input_image/
+.env

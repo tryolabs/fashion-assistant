@@ -16,7 +16,14 @@ from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
 from llama_index.indices.postprocessor import KeywordNodePostprocessor
 # %%
-df_raw = pd.read_json("data/walmart.json")
+
+dfs = []
+for i in range(1, 4):
+    df_ = pd.read_json(f"data/walmart{i}.json")
+    dfs.append(df_)
+
+df_raw = pd.concat(dfs).drop_duplicates(subset='id')
+# %%
 # %%
 df_raw.head()
 # %%
@@ -47,9 +54,7 @@ with open("data/descriptions.json", "r") as fh:
 
 # %%
 
-# Create images directory if it doesn't exist
-if not os.path.exists('data/images'):
-    os.makedirs('data/images')
+os.makedirs('data/images', exist_ok=True)
 
 # Download images
 for index, row in tqdm(df.iterrows()):
