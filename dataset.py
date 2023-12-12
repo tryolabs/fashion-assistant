@@ -1,20 +1,21 @@
 # %%
 
+import json
+import math
 import os
 import urllib.request
-import math
-import json
+
 import pandas as pd
-from api import gpt_vision
+from llama_index import Document, SimpleDirectoryReader, VectorStoreIndex
+from llama_index.indices.postprocessor import KeywordNodePostprocessor
+from llama_index.query_engine import RetrieverQueryEngine
+from llama_index.retrievers import VectorIndexRetriever
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores import DeepLakeVectorStore
 from tqdm import tqdm
 
-from llama_index import Document
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, Document
-from llama_index.vector_stores import DeepLakeVectorStore
-from llama_index.storage.storage_context import StorageContext
-from llama_index.retrievers import VectorIndexRetriever
-from llama_index.query_engine import RetrieverQueryEngine
-from llama_index.indices.postprocessor import KeywordNodePostprocessor
+from api import gpt_vision
+
 # %%
 
 dfs = []
@@ -22,28 +23,33 @@ for i in range(1, 4):
     df_ = pd.read_json(f"data/walmart{i}.json")
     dfs.append(df_)
 
-df_raw = pd.concat(dfs).drop_duplicates(subset='id')
+df_raw = pd.concat(dfs).drop_duplicates(subset="id")
 # %%
 # %%
 df_raw.head()
 # %%
 
-df = pd.DataFrame({
-    'brand': df_raw["brand"],
-    'category': df_raw["category"].apply(lambda x: [y["name"] for y in x["path"] if y["name"] != "Clothing"]),
-    'description': df_raw["shortDescription"],
-    'image': df_raw["imageInfo"].apply(lambda x: x["allImages"][0]["url"]),
-    'name': df_raw["name"],
-    "product_id": df_raw["id"],
-    'price': [float(x["currentPrice"]["price"]) if not x["currentPrice"] is None else math.inf for x in df_raw["priceInfo"]]
-})
+df = pd.DataFrame(
+    {
+        "brand": df_raw["brand"],
+        "category": df_raw["category"].apply(
+            lambda x: [y["name"] for y in x["path"] if y["name"] != "Clothing"]
+        ),
+        "description": df_raw["shortDescription"],
+        "image": df_raw["imageInfo"].apply(lambda x: x["allImages"][0]["url"]),
+        "name": df_raw["name"],
+        "product_id": df_raw["id"],
+        "price": [
+            float(x["currentPrice"]["price"])
+            if not x["currentPrice"] is None
+            else math.inf
+            for x in df_raw["priceInfo"]
+        ],
+    }
+)
 df = df[df["category"].transform(lambda x: len(x)) >= 2]
 
-gender_map = {
-    "Womens Clothing": "women",
-    "Mens Clothing": "men",
-    "Shoes": "either"
-}
+gender_map = {"Womens Clothing": "women", "Mens Clothing": "men", "Shoes": "either"}
 df["gender"] = df["category"].apply(lambda x: gender_map.get(x[0], "either"))
 # %%
 df.head()
@@ -54,15 +60,15 @@ with open("data/descriptions.json", "r") as fh:
 
 # %%
 
-os.makedirs('data/images', exist_ok=True)
+os.makedirs("data/images", exist_ok=True)
 
 # Download images
 for index, row in tqdm(df.iterrows()):
-    image_url = row['image']
+    image_url = row["image"]
     product_id = row["product_id"]
     category = row["category"][1]
 
-    image_name = os.path.join('data/images', product_id + '.jpg')
+    image_name = os.path.join("data/images", product_id + ".jpg")
     if not os.path.exists(image_name):
         urllib.request.urlretrieve(image_url, image_name)
 
@@ -79,17 +85,13 @@ for index, row in tqdm(df.iterrows()):
         except Exception as e:
             print(e)
             message = None
-        
+
         descriptions[row["product_id"]] = message
 
 
 # %%
 # with open("data/descriptions.json", "w") as fh:
 #     json.dump(descriptions, fh)
-
-    
-# %%
-os.environ["ACTIVELOOP_TOKEN"] = "eyJhbGciOiJIUzUxMiIsImlhdCI6MTcwMjAzMzM3OCwiZXhwIjoxNzMzNjU1NzczfQ.eyJpZCI6ImtpZWRhbnNraSJ9.QBhyvCxFaL-m5nB4wnp5Us2mMpoTPvMWbSknAk7R6myUvBCM6l1yLb0i5T6RMc46cDhBr_qfyOMzHkExsnzyPQ"
 
 
 # %%
@@ -104,7 +106,7 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 # %%
 documents = []
 for i, row in df.iterrows():
-    product_id = row["product_id"] 
+    product_id = row["product_id"]
     description = descriptions[product_id]
     name = row["name"]
     gender = row["gender"]
@@ -122,24 +124,18 @@ for i, row in df.iterrows():
 
     # Price
     {price}
-    
+
     """
     if all([product_id, description, name, gender]):
         doc = Document(
-            text = desc,
-            metadata = {
-                "name": name,
-                "product_id": product_id,
-                "gender": gender
-            }
+            text=desc,
+            metadata={"name": name, "product_id": product_id, "gender": gender},
         )
         documents.append(doc)
     else:
         print(row)
 # %%
-index = VectorStoreIndex.from_documents(
-    documents, storage_context=storage_context
-)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 # %%
 
 # query_engine = index.as_query_engine()
