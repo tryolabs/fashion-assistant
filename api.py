@@ -35,7 +35,7 @@ def encode_image(image_path):
 # %%
 #
 #
-def gpt_vision(image_path, prompt):
+def gpt_vision(image_path: str, prompt: str):
     base64_image = encode_image(image_path)
 
     # Call GPT4V using OpenAI API
@@ -62,6 +62,15 @@ def gpt_vision(image_path, prompt):
     return response
 
 
+def generate_image_description(image_path: str):
+    """Describes the piece of clothing on the image"""
+    prompt = """
+    Describe the piece of clothing in the image of the following category: Womens Sweatshirts & Hoodies
+    Do include the color, style, material and other important attributes of the item.
+    """
+    return gpt_vision(image_path, prompt)
+
+
 # %%
 # Geneate image
 #
@@ -71,6 +80,7 @@ client = OpenAI()
 
 
 def generate_image(prompt):
+    """Generate images based on the prompt description"""
     # Call Dalle3 using OpenAI API
     response = client.images.generate(
         model="dall-e-3",

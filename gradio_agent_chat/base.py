@@ -1,27 +1,15 @@
+import ast
+import os
+import re
 import sys
 from io import StringIO
 from typing import Any, Dict, List, Tuple
 
 import gradio as gr
 from gradio.themes import ThemeClass as Theme
+from gradio.themes.utils import colors, fonts, sizes
 from llama_index.agent.types import BaseAgent
 from llama_index.llama_pack.base import BaseLlamaPack
-
-
-class Capturing(list):
-    """To capture the stdout from `BaseAgent.stream_chat` with `verbose=True`. Taken from
-    https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
-    """
-
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio  # free up some memory
-        sys.stdout = self._stdout
 
 
 class GradioAgentChatPack(BaseLlamaPack):
@@ -42,6 +30,13 @@ class GradioAgentChatPack(BaseLlamaPack):
         self.thoughts = ""
         self.conv = Ansi2HTMLConverter()
         self.theme = self._get_theme()
+        self.demo = gr.Blocks(
+            theme=self.theme,
+            css=(
+                "#box { height: 420px; overflow-y: scroll !important} "
+                "#logo { display: flex; justify-content: flex-end; }"
+            ),
+        )
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
@@ -54,19 +49,28 @@ class GradioAgentChatPack(BaseLlamaPack):
 
     def _generate_response(
         self, chat_history: List[Tuple[str, str]]
-    ) -> Tuple[str, List[Tuple[str, str]]]:
-        """Generate the response from agent, and capture the stdout of the
-        ReActAgent's thoughts.
-        """
+    ) -> List[Tuple[str, str]]:
+        """Generate the response from agent"""
 
-        with Capturing() as output:
-            response = self.agent.stream_chat(chat_history[-1][0])
-        ansi = "\n========\n".join(output)
-        html_output = self.conv.convert(ansi)
+        response = self.agent.stream_chat(chat_history[-1][0])
 
         for token in response.response_gen:
             chat_history[-1][1] += token
-            yield chat_history, str(html_output)
+            yield chat_history
+
+        # def parse_file(msg: str):
+        #     try:
+        #         return ast.literal_eval(msg.splitlines()[-1])
+        #     except:
+        #         try:
+        #             path = re.findall(r"\[Product Image\]\((.*?)\)", msg)[0]
+        #             print(f"found path {path}")
+        #             return (path,)
+        #         except:
+        #             return msg
+
+        # chat_history[-1][1] = parse_file(chat_history[-1][1])
+        # return chat_history
 
     def _reset_chat(self) -> Tuple[str, str]:
         """Reset the agent's chat history. And clear all dialogue boxes."""
@@ -75,8 +79,6 @@ class GradioAgentChatPack(BaseLlamaPack):
         return "", "", ""  # clear textboxes
 
     def _get_theme(self) -> Theme:
-        from gradio.themes.utils import colors, fonts, sizes
-
         llama_theme = gr.themes.Soft(
             primary_hue=colors.purple,
             secondary_hue=colors.pink,
@@ -115,18 +117,13 @@ class GradioAgentChatPack(BaseLlamaPack):
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline."""
-        import gradio as gr
 
-        demo = gr.Blocks(
-            theme=self.theme,
-            css="#box { height: 420px; overflow-y: scroll !important} #logo { align-self: center }",
-        )
-        with demo:
+        with self.demo:
             with gr.Row():
                 gr.Markdown(
                     """
-                    # Chat With Your Agent
-                    Powered by DeepLake, Gradio, LlamaIndex and LlamaHub 🦙\n
+                    # Chat with your Outfit Recommender Assistant
+                    powered by DeepLake, Gradio, LlamaIndex and LlamaHub 🦙\n
                     """
                 )
                 gr.Markdown(
@@ -135,47 +132,66 @@ class GradioAgentChatPack(BaseLlamaPack):
                 )
             with gr.Row():
                 chat_history = gr.Chatbot(
-                    label="Message History",
-                    scale=3,
+                    label="Chat",
+                    avatar_images=(None, "activeloop_avatar.png"),
+                    height=800,
+                    show_copy_button=True,
                 )
-                with gr.Accordion("label"):
-                    console_log = gr.HTML(elem_id="box")
+                # with gr.Accordion("Console log"):
+                #     console_log = gr.HTML(elem_id="box")
             with gr.Row():
                 user_message = gr.Textbox(
-                    label="Enter text and press enter, or upload an image", scale=4
+                    placeholder="Enter text and press enter, or upload an image",
+                    scale=4,
+                    container=False,
                 )
-                btn = gr.UploadButton("📁", file_types=["image"])
-                clear = gr.ClearButton()
+            with gr.Row():
+                btn_upload_img = gr.UploadButton(
+                    "Upload image 🖼️ ", size="sm", file_types=["image"]
+                )
+                clear = gr.ClearButton(value="Reset", size="sm")
+
+            # Add like/dislike event to the chat
+            chat_history.like(self.print_like_dislike, None, None)
 
             # Handle new user message
-            user_message.submit(
+            new_msg_event = user_message.submit(
                 fn=self._handle_user_message,
                 inputs=[user_message, chat_history],
                 outputs=[user_message, chat_history],
-                queue=False,
-            ).then(
+                show_progress=True,
+                # queue=False,
+            )
+            new_msg_event.then(
                 fn=self._generate_response,
                 inputs=chat_history,
-                outputs=[chat_history, console_log],
+                outputs=[chat_history],
+                show_progress=True,
             )
 
             # Handle upload fine
-            file_msg = btn.upload(
+            new_file_event = btn_upload_img.upload(
                 fn=self._handle_image,
-                inputs=[btn, chat_history],
+                inputs=[btn_upload_img, chat_history],
                 outputs=[chat_history],
-                queue=False,
-            ).then(
-                fn=self._generate_response, inputs=chat_history, outputs=chat_history
+                show_progress=True,
+                # queue=False,
+            )
+            new_file_event.then(
+                fn=self._generate_response,
+                inputs=chat_history,
+                outputs=chat_history,
+                show_progress=True,
             )
 
             # Handle click on clear button
-            clear.click(
-                self._reset_chat, None, [user_message, chat_history, console_log]
-            )
+            clear.click(self._reset_chat, None, [user_message, chat_history])
 
-        demo.launch(server_name="0.0.0.0", server_port=8080)
+        self.demo.launch(server_name="0.0.0.0", server_port=8080)
 
     def _handle_image(self, image, history):
         history = history + [((image.name,), None)]
         return history
+
+    def print_like_dislike(self, x: gr.LikeData):
+        print(x.index, x.value, x.liked)

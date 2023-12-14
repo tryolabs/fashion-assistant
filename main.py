@@ -1,7 +1,16 @@
 # %%
+#
+#
+import logging
 import os
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+# %%
 from typing import List
 
+import nest_asyncio
 from dotenv import load_dotenv
 from llama_hub.tools.weather import OpenWeatherMapToolSpec
 from llama_index import (
@@ -21,12 +30,12 @@ from llama_index.tools import QueryEngineTool, ToolMetadata
 from llama_index.vector_stores import DeepLakeVectorStore
 from pydantic import BaseModel
 
-from utils import show_product_in_notebook
+from api import generate_image, generate_image_description
+from utils import get_product_image_path_for_gradio, show_product_in_notebook
 
-# from api import outfit_generation_tool
+# nest_asyncio.apply()
 
 load_dotenv()  # take environment variables from .env
-
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPEN_WEATHER_MAP_KEY = os.environ["OPEN_WEATHER_MAP_KEY"]
 
@@ -212,15 +221,18 @@ get_current_date_tool = FunctionTool.from_defaults(fn=get_current_date)
 # %%
 # Tool receive product image from the user
 #
-
-# TODO
+generate_image_description_tool = FunctionTool.from_defaults(
+    fn=generate_image_description
+)
 
 
 # %%
 # Tool to show product on the UI
 #
 
-# TODO
+load_product_image_tool = FunctionTool.from_defaults(
+    fn=get_product_image_path_for_gradio
+)
 
 
 # %%
@@ -257,9 +269,19 @@ class CustomOpenWeatherMapToolSpec(OpenWeatherMapToolSpec):
 
         temperature = w.temperature(self.temp_units)
         temp_unit = "°C" if self.temp_units == "celsius" else "°F"
-        temp_str = self._format_forecast_temp(temperature, temp_unit)
 
-        weather_text = self._format_weather(location, temp_str, w)
+        # TODO: this isn't working.. Error: 'max' key.
+        try:
+            temp_str = self._format_forecast_temp(temperature, temp_unit)
+        except:
+            logging.exception(f"Could _format_forecast_temp {temperature}")
+            temp_str = str(temperature)
+
+        try:
+            weather_text = self._format_weather(location, temp_str, w)
+        except:
+            logging.exception(f"Could _format_weather {w}")
+            weather_text = str(w) + " " + str(temp_str)
 
         return [
             Document(
@@ -284,7 +306,7 @@ weather_tool_spec = CustomOpenWeatherMapToolSpec(key=OPEN_WEATHER_MAP_KEY)
 # %%
 # Tool to show image in notebook
 #
-show_product_in_notebook_tool = FunctionTool.from_defaults(fn=show_product_in_notebook)
+# show_product_in_notebook_tool = FunctionTool.from_defaults(fn=show_product_in_notebook)
 
 # %%
 # Image generation tool
@@ -293,6 +315,7 @@ from llama_hub.tools.openai_image_generation import OpenAIImageGenerationToolSpe
 
 # Note: tried it out and it doesn't work, multiple errors (e.g access to internal modules, missing metadata)
 # image_generation_tool = OpenAIImageGenerationToolSpec(api_key=OPENAI_API_KEY)
+image_generation_tool = FunctionTool.from_defaults(fn=generate_image)
 
 
 # %%
@@ -302,26 +325,25 @@ agent = OpenAIAgent.from_tools(
     system_prompt="""
     You are a specialized shopping assistant.
 
-    Customers will provide you with a piece of clothing and occasion, and you will generate a matching outfit.
+    You are tasked to recommend an outfit for an upcoming event based on the
+    user's gender, style preferences, occasion type, weather conditions on event's date and location, etc.
 
-    If it's an especial event, you can ask for the city to get the weather conditions.
+    Don't ask all the questions at once, gather the required information step by step.
 
-    Your final answer needs to be the product_id associated with the best matching product in our inventory.
+    Once you have the required information, your answer needs to be the outfit composed by the
+    product_id with the best matching products in our inventory.
 
-    For each product of the outfit, search the inventory.
-
-    Include the total price of the recommended outfit.
+    Include the the total price of the recommended outfit.
     """,
+    # Customers will provide you with a piece of clothing and occasion, and you will generate a matching outfit.
+    # If it's an especial event, you can ask for the city to get the weather conditions.
     tools=[
-        inventory_query_engine_tool,
-        outfit_description_tool,
         get_current_date_tool,
         *weather_tool_spec.to_tool_list(),
-        show_product_in_notebook_tool,
-        # image_generation_tool,
+        inventory_query_engine_tool,
+        outfit_description_tool,
+        generate_image_description_tool,
     ],
-    # + ,
-    # tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     llm=llm,
     verbose=True,
 )
