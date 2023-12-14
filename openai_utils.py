@@ -6,12 +6,10 @@ from io import BytesIO
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
-from pydantic import BaseModel
 
-load_dotenv()  # take environment variables from .env
+load_dotenv()
 
 # %%
-api_key = os.environ["OPENAI_API_KEY"]
 client = OpenAI()
 
 
@@ -33,7 +31,7 @@ def encode_image(image_path):
 
 
 # %%
-#
+# Describe image
 #
 def gpt_vision(image_path: str, prompt: str):
     base64_image = encode_image(image_path)
@@ -72,7 +70,7 @@ def generate_image_description(image_path: str):
 
 
 # %%
-# Geneate image
+# Generate image
 #
 from openai import OpenAI
 
@@ -92,53 +90,5 @@ def generate_image(prompt):
     return response
 
 
-# response_img = generate_image("outfit with a blue top and a black jeans")
-
-# %%
-#
-#
-
-# def generate_outfit_(image_path, gender):
-#     prompt = f"""
-#     You are an expert in fashion and design.
-#     Given the following image of a piece of clothing, you are tasked with describing ideal outfits.
-
-#     We only want outfits composed of tops, bottoms and shoes.
-#     Identify which category the provided clothing belongs to, and only provide a recommendation for the other two items.
-
-#     In your description, include color and style.
-#     This outfit is for {gender}
-
-#     Your answer can only describe one piece of clothing for each category. Choose well. Only describe the piece of clothing, not your rationale. Use headers for each category: Top, Bottom, Shoes. Leave the provided category empty.
-#     """
-
-#     response = gpt_vision(image_path=image_path, prompt=prompt)
-#     return response.choices[0].message.content
-
-
-# %%
-# res = gpt_vision(
-#     "data/images/5PKXXW0RKTDS.jpg",
-#     "Describe the piece of clothing in the image of the following category: Womens Sweatshirts & Hoodies\nDo include the color, style, material and other important attributes of the item."
-# )
-# %%
-
-# %%
-
-# %%
-# %%
-
-# r = agent.chat("Hi")
-# print(r)
-# # %%
-# r = agent.chat("I want an outfit for a casual birthday party")
-# print(r)
-
-# # %%
-# r = agent.chat("I'm a man ")
-# print(r)
-# # %%
-# r = agent.chat("More of a casual party")
-# print(r)
-
-# # %%
+if __name__ == "__main__":
+    response_img = generate_image("outfit with a blue top and a black jeans")

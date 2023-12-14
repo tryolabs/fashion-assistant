@@ -19,7 +19,7 @@ def get_product_image_path_for_gradio(product_id) -> tuple[str, None]:
 
     It's important to not reformat the output of this function before returning to the user, return the response as it is. Don't reformat this output.
     """
-    # If the type if a tuple, it's considered a file, see Chatbot._postprocess_chat_messages to see logic.
+    # If the type if a tuple, it's considered a file, see Chatbot._postprocess_chat_messages for more info.
     return (get_product_image_path(product_id),)
 
 

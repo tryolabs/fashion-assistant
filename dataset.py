@@ -14,7 +14,9 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 from tqdm import tqdm
 
-from api import gpt_vision
+from openai_utils import gpt_vision
+
+DATASET_PATH = "hub://kiedanski/walmart_clothing4"
 
 IMAGE_DIR = os.path.abspath("data/images")
 
@@ -23,17 +25,16 @@ IMAGE_DIR = os.path.abspath("data/images")
 
 if __name__ == "__main__":
     # %%
+    # TODO: merge items into a single json file
     dfs = []
     for i in range(1, 4):
         df_ = pd.read_json(f"data/walmart{i}.json")
         dfs.append(df_)
 
     df_raw = pd.concat(dfs).drop_duplicates(subset="id")
-    # %%
-    # %%
     df_raw.head()
-    # %%
 
+    # %%
     df = pd.DataFrame(
         {
             "brand": df_raw["brand"],
@@ -56,7 +57,6 @@ if __name__ == "__main__":
 
     gender_map = {"Womens Clothing": "women", "Mens Clothing": "men", "Shoes": "either"}
     df["gender"] = df["category"].apply(lambda x: gender_map.get(x[0], "either"))
-    # %%
     df.head()
 
     # %%
@@ -64,7 +64,6 @@ if __name__ == "__main__":
         descriptions = json.load(fh)
 
     # %%
-
     os.makedirs(IMAGE_DIR, exist_ok=True)
 
     # Download images
@@ -97,14 +96,8 @@ if __name__ == "__main__":
     # with open("data/descriptions.json", "w") as fh:
     #     json.dump(descriptions, fh)
 
-    # %%
-
-    # %%
-    dataset_path = "hub://kiedanski/walmart_clothing4"
-    vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
+    vector_store = DeepLakeVectorStore(dataset_path=DATASET_PATH, overwrite=True)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-    # %%
 
     # %%
     documents = []
@@ -137,38 +130,3 @@ if __name__ == "__main__":
             documents.append(doc)
         else:
             print(row)
-    # %%
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
-    # %%
-
-    # query_engine = index.as_query_engine()
-    # response = query_engine.query(
-    #     "Hat"
-    # )
-    # # %%
-    # retriever = VectorIndexRetriever(
-    #     index=index,
-    #     similarity_top_k=5,
-    # )
-    # # %%
-    # node_postprocessors = [
-    #     KeywordNodePostprocessor(
-    #         exclude_keywords=["either"]
-    #     )
-    # ]
-    # query_engine = RetrieverQueryEngine.from_args(
-    #     retriever, node_postprocessors=node_postprocessors
-    # )
-    # # %%
-    # response = query_engine.query("Hat")
-
-    # # %%
-    # from llama_index.vector_stores.types import MetadataFilters, ExactMatchFilter
-
-    # filters = MetadataFilters(filters=[ExactMatchFilter(key="gender", value="men")])
-
-    # query_engine = index.as_query_engine(filters=filters)
-    # # %%
-    # response = query_engine.query("Hat")
-
-    # # %%
