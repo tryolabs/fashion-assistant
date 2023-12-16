@@ -15,7 +15,11 @@ logging.basicConfig(filename="debug.log", level=logging.DEBUG, format=LOG_FORMAT
 load_dotenv()
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPEN_WEATHER_MAP_KEY = os.environ["OPEN_WEATHER_MAP_KEY"]
+ACTIVELOOP_DATASET_TEXT = os.getenv("ACTIVELOOP_DATASET_TEXT")
+ACTIVELOOP_DATASET_IMG = os.getenv("ACTIVELOOP_DATASET_IMG")
 
+INPUT_IMAGE_DIR = "./input_image"
+os.makedirs(INPUT_IMAGE_DIR, exist_ok=True)
 
 # %%
 # Imports
@@ -38,7 +42,6 @@ from llama_index.tools import FunctionTool, QueryEngineTool, ToolMetadata
 from llama_index.vector_stores import DeepLakeVectorStore
 from pydantic import BaseModel
 
-from dataset import DATASET_PATH
 from openai_utils import generate_image_description
 from utils import show_product_in_notebook
 
@@ -70,8 +73,28 @@ class Outfit(BaseModel):
 # VectorStore connected to our DeepLake dataset
 #
 vector_store = DeepLakeVectorStore(
-    dataset_path=DATASET_PATH, overwrite=False, read_only=True
+    dataset_path=ACTIVELOOP_DATASET_TEXT, overwrite=False, read_only=True
 )
+
+
+def clean_input_image():
+    if len(os.listdir(INPUT_IMAGE_DIR)) > 0:
+        for file in os.listdir(INPUT_IMAGE_DIR):
+            os.remove(os.path.join(INPUT_IMAGE_DIR, file))
+
+def has_user_input_image():
+    """
+    Check if the INPUT_IMAGE_DIR directory contains exactly one image.
+    Useful for checking if there is an image before generating an outfit.
+    
+    Returns:
+        bool: True if INPUT_IMAGE_DIR contains exactly one image, False otherwise.
+    """
+    return len(os.listdir(INPUT_IMAGE_DIR)) == 1
+
+    
+check_input_image_tool = FunctionTool.from_defaults(fn=has_user_input_image)
+       
 
 # %%
 # LLM
@@ -137,7 +160,7 @@ def generate_outfit_description(gender: str, user_input: str):
     """
 
     # Load input image
-    image_documents = SimpleDirectoryReader("./input_image").load_data()
+    image_documents = SimpleDirectoryReader(INPUT_IMAGE_DIR).load_data()
 
     # Define multi-modal llm
     openai_mm_llm = OpenAIMultiModal(model="gpt-4-vision-preview", max_new_tokens=100)
@@ -279,6 +302,8 @@ agent = OpenAIAgent.from_tools(
     user's gender, style preferences, occasion type, weather conditions on event's date and location, etc.
 
     Don't ask all the questions at once, gather the required information step by step.
+    
+    Always check if the user has uploaded an image. If it has not, wait until they do. Never proceed without an image.
 
     Once you have the required information, your answer needs to be the outfit composed by the
     product_id with the best matching products in our inventory.
@@ -290,7 +315,7 @@ agent = OpenAIAgent.from_tools(
         *weather_tool_spec.to_tool_list(),
         inventory_query_engine_tool,
         outfit_description_tool,
-        generate_image_description_tool,
+        check_input_image_tool,
     ],
     llm=llm,
     verbose=True,

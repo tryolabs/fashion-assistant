@@ -1,9 +1,15 @@
+import os
+import shutil
 import logging
+import re
+import urllib.parse
 from typing import List, Tuple
 
 import gradio as gr
 
-from main import agent
+from main import agent, clean_input_image, INPUT_IMAGE_DIR
+
+reg = re.compile(r'[0-9A-Z]{12}')
 
 
 #
@@ -17,24 +23,45 @@ def handle_user_message(user_message, history):
 
 def handle_image(image, history):
     """Handle uploaded image. Add it to the chat history"""
-    history = history + [((image.name,), None)]
+
+    path = os.path.join(INPUT_IMAGE_DIR, os.path.basename(image.name))
+    shutil.copyfile(image.name, path)    
+    message = "I just uploaded the image"
+
+    history = history + [(message, " ")]
     return history
 
 
 def generate_response(chat_history: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     """Generate the response from agent"""
 
+    iframe_html = '<iframe src={url} width="300px" height="600px"></iframe>'
+    iframe_url = "https://app.activeloop.ai/visualizer/iframe?url=hub://genai360/walmart-images&query=" 
+
     response = agent.stream_chat(chat_history[-1][0])
 
     for token in response.response_gen:
         chat_history[-1][1] += token
-        yield chat_history
+
+        product_ids = reg.findall(chat_history[-1][1])        
+        if len(product_ids) >= 2:
+            query = "select * where " + " or ".join([f"contains(ids, '{x}')" for x in product_ids])          
+            url = iframe_url + urllib.parse.quote(query)
+        else:
+            url = "about:blank"
+        
+        html = iframe_html.format(url=url)
+
+        yield chat_history, html
+
+    print("Mua ha ha ha")
 
 
 def reset_chat(self) -> Tuple[str, str]:
     """Reset the agent's chat history. And clear all dialogue boxes."""
     # Clear agent history
     agent.reset()
+    clean_input_image()
 
     # Reset chat history
     return "", ""
@@ -49,7 +76,8 @@ def print_like_dislike(x: gr.LikeData):
 #
 with gr.Blocks(
     title="Outfit Recommender ✨",
-    css=".center { display: flex; justify-content: center; }",
+    css="#box { height: 420px; overflow-y: scroll !important} #logo { align-self: right }",
+    theme='gradio/soft'
 ) as demo:
     #
     # Add components
@@ -65,9 +93,14 @@ with gr.Blocks(
     with gr.Row():
         chat_history = gr.Chatbot(
             label="Chat",
-            avatar_images=(None, "activeloop_avatar.png"),
-            height=800,
+            avatar_images=("assets/user.png", "assets/smith.png"),
+            scale = 2,
             show_copy_button=True,
+        )
+        outfit = gr.HTML(
+            """
+            <iframe src="about:blank" width="300px" height="600px"></iframe>
+            """
         )
     with gr.Row():
         user_message = gr.Textbox(
@@ -88,6 +121,7 @@ with gr.Blocks(
         elem_classes="center",
     )
 
+
     #
     # Configure Event Listeners
     #
@@ -105,7 +139,7 @@ with gr.Blocks(
     new_msg_event.then(
         fn=generate_response,
         inputs=chat_history,
-        outputs=[chat_history],
+        outputs=[chat_history, outfit],
         show_progress=True,
     )
 
@@ -119,7 +153,7 @@ with gr.Blocks(
     new_file_event.then(
         fn=generate_response,
         inputs=chat_history,
-        outputs=chat_history,
+        outputs=[chat_history, outfit],
         show_progress=True,
     )
 
@@ -128,4 +162,5 @@ with gr.Blocks(
 
 # Run `gradio app.py` on the terminal
 if __name__ == "__main__":
+    clean_input_image()
     demo.launch(server_name="0.0.0.0", server_port=8080)

@@ -4,6 +4,7 @@ import json
 import math
 import os
 import urllib.request
+import deeplake
 
 import pandas as pd
 from llama_index import Document, SimpleDirectoryReader, VectorStoreIndex
@@ -14,11 +15,15 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 from tqdm import tqdm
 
+from dotenv import load_dotenv
+
 from openai_utils import gpt_vision
 
-DATASET_PATH = "hub://kiedanski/walmart_clothing4"
+load_dotenv()
 
 IMAGE_DIR = os.path.abspath("data/images")
+ACTIVELOOP_DATASET_TEXT = os.getenv("ACTIVELOOP_DATASET_TEXT")
+ACTIVELOOP_DATASET_IMG = os.getenv("ACTIVELOOP_DATASET_IMG")
 
 # %%
 # Run dataset creation
@@ -93,10 +98,13 @@ if __name__ == "__main__":
             descriptions[row["product_id"]] = message
 
     # %%
-    # with open("data/descriptions.json", "w") as fh:
-    #     json.dump(descriptions, fh)
+    with open("data/descriptions.json", "w") as fh:
+        json.dump(descriptions, fh)
 
-    vector_store = DeepLakeVectorStore(dataset_path=DATASET_PATH, overwrite=True)
+    # %%
+    vector_store = DeepLakeVectorStore(
+        dataset_path=ACTIVELOOP_DATASET_TEXT, overwrite=True
+    )
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
     # %%
@@ -130,3 +138,25 @@ if __name__ == "__main__":
             documents.append(doc)
         else:
             print(row)
+
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+
+    # %%
+
+    ds = deeplake.empty(ACTIVELOOP_DATASET_IMG)
+
+    with ds:
+        ds.create_tensor("images", htype="image", sample_compression="jpeg")
+        ds.create_tensor("ids", htype="tag")
+
+    # %%
+    with ds:
+        # Iterate through the files and append to Deep Lake dataset
+        for index, row in tqdm(df.iterrows()):
+            product_id = row["product_id"]
+
+            image_name = os.path.join(IMAGE_DIR, product_id + ".jpg")
+            if os.path.exists(image_name):
+                # Append data to the tensors
+                ds.append({"images": deeplake.read(image_name), "ids": product_id})
+# %%
