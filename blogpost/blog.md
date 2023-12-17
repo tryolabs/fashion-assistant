@@ -36,13 +36,13 @@ The system is designed to replicate the personalized experience of working with 
 
 Our data journey begins with Apify, a versatile web scraping tool we used to collect product information from Walmart's online catalog. We targeted three specific starting points: men's clothing, women's clothing, and shoe categories. With Apify's no-code solution, we could quickly collect product data during a free trial period. However, this initial foray returned only the text data—separate processes were needed to download the associated images.
 
-![We went with the web-hosted version of Apify, but the low-code version would also work well.](assest/Untitled.png)
+![We went with the web-hosted version of Apify, but the low-code version would also work well.](assets/Untitled.png)
 
 We went with the web-hosted version of Apify, but the low-code version would also work well.
 
 We aimed to construct a representative dataset of men's and women's clothing, including various tops, bottoms, and accessories. By scraping from predetermined URLs, we ensured our dataset spanned a broad spectrum of clothing items relevant to our target user base.
 
-![Untitled](assest/Untitled%201.png)
+![Untitled](assets/Untitled%201.png)
 
 The collected data is fairly rich and contains a wide variety of attributes. For the purpose of this project, we kept the attributes used to a minimum. We selected the product ID, category, price, name, and image. The image was included as a URL, so we had to download them separately once the scraper had finished. Overall, we collected 1344 items. 
 
@@ -88,7 +88,7 @@ result = gpt_vision(image_path, prompt)
 
 The following is an example image of the dataset: `PRODUCT_ID=0REDJ7M0U7DV`, and the generated description by GPT-Vision.
 
-![Untitled](assest/Untitled%202.png)
+![Untitled](assets/Untitled%202.png)
 
 Embedding these descriptions into DeepLake's vector database was our next step. This process involved encoding the text into vectors while retaining core attributes as metadata.
 
@@ -443,7 +443,7 @@ The total price of the outfit will be either $39.99 or $35.18, depending on your
 Would you like me to find a matching bottom for you as well?
 ```
 
-![Untitled](assest/Untitled%203.png)
+![Untitled](assets/Untitled%203.png)
 
 After analyzing the options, the agent presents the user with the best matching pairs, complete with item details such as price and purchase links (the product ID could be converted to a URL later). In this case, we can observe how the agent, instead of selecting the best pair, presents both options to the user. 
 
@@ -554,7 +554,7 @@ It took us a little bit to remember that we needed this. At first, the LLM was c
 
 In developing the user interface for our AI-powered shopping assistant, we wanted the platform to reflect the conversational nature of the agent's interactions. [Gradio](https://www.gradio.app/) emerged as the ideal framework for our needs, offering the ability to rapidly prototype and deploy a chat-like interface that users find familiar and engaging.
 
-![Untitled](assest/Untitled%204.png)
+![Untitled](assets/Untitled%204.png)
 
 ### **Embracing chat interface with Gradio**
 
