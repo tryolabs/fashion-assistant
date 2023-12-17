@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from dotenv import load_dotenv
 
-from openai_utils import gpt_vision
+from src.openai_utils import gpt_vision
 
 load_dotenv()
 

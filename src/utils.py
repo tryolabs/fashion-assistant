@@ -4,7 +4,7 @@ Utils functions
 from IPython.display import Image, display
 from PIL import Image as PILImage
 
-from dataset import IMAGE_DIR
+from src.dataset import IMAGE_DIR
 
 
 def get_product_image_path(product_id):

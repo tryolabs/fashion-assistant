@@ -42,8 +42,8 @@ from llama_index.tools import FunctionTool, QueryEngineTool, ToolMetadata
 from llama_index.vector_stores import DeepLakeVectorStore
 from pydantic import BaseModel
 
-from openai_utils import generate_image_description
-from utils import show_product_in_notebook
+from src.openai_utils import generate_image_description
+from src.utils import show_product_in_notebook
 
 
 # %%
