@@ -1,19 +1,47 @@
-# Demo for Activeloop's Course on LlamaIndex
+# Smart Shopping Assistant
 
 We are building an Outfit Recommender Agent that uses multiple tools.
 
-## How to run demo
 
-```sh
-gradio app.py
-```
+## Getting started
 
-### Env
+For this project we use two external services: OpenAI and Open Weather Map. Both services require an API KEY.
 
-.env files should contain the following variables
+1. [OpenAI](https://openai.com/blog/openai-api)
+2. [Open Weather Map](https://openweathermap.org/api)
 
-```
-ACTIVELOOP_TOKEN
-OPENAI_API_KEY
-OPEN_WEATHER_MAP_KEY
+## Running the project
+
+There are two main notebooks in this project. `simple_agent` and `main`.
+
+The notebook `simple_agent` showcases an earlier version of the agent without UI and the weather integration. We recommend getting started there.
+
+The notebook `main` puts everything together and can be used to run the complete demo.
+
+## Structure
+
+If you want to take a closer look at the implementation behind the demo, most of the code can be located inside `src/`. In particular, `dataset.py` and `main.py` contain most of this project logic.
+
+```bash
+├── README.md
+├── __init__.py
+├── assets
+│   ├── smith.png
+│   └── user.png
+├── blogpost
+│   ├── assets
+│   └── blog.md
+├── data
+│   ├── descriptions.json
+│   ├── walmart1.json
+│   ├── walmart2.json
+│   └── walmart3.json
+├── main.ipynb
+├── requirements.txt
+├── simple_agent.ipynb
+└── src
+    ├── dataset.py
+    ├── main.py
+    ├── openai_utils.py
+    └── utils.py
 ```
