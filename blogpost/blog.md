@@ -1,4 +1,4 @@
-# ****Building a smart shopping assistant with DeepLake and LlamaIndex****
+# ****Building a smart fashion assistant with DeepLake and LlamaIndex****
 
 *Diego Kiedanski, Principal AI Consultant, and Lucas Micol, Lead Machine Learning Engineer at Tryolabs, authored the following blog post.* 
 
@@ -6,13 +6,13 @@ In the ever-expanding landscape of artificial intelligence, vector databases sta
 
 Alongside vector databases, Large Language Model (LLM) frameworks such as LlamaIndex and Langchain have emerged as key players in accelerating AI development. By simplifying the prototyping process and reducing development overheads associated with API interactions and data formatting, **these frameworks allow creators to focus on innovation** rather than the intricacies of implementation.
 
-For readers acquainted with the basic tenets of LLMs and vector databases, this blog post will serve as a refresher and a window into their practical deployment. We aim to walk you through **constructing a complex and interactive shopping assistant**. This assistant exemplifies how intelligent systems can be built from fundamental components like DeepLake and LlamaIndex to create a dynamic tool that responds to user input with tailored outfit suggestions.
+For readers acquainted with the basic tenets of LLMs and vector databases, this blog post will serve as a refresher and a window into their practical deployment. We aim to walk you through **constructing a complex and interactive fashion assistant**. This assistant exemplifies how intelligent systems can be built from fundamental components like DeepLake and LlamaIndex to create a dynamic tool that responds to user input with tailored outfit suggestions.
 
 Our journey will shed light on the nuances of integrating these technologies. By highlighting this project's development, we hope to spark your imagination about the possibilities at the intersection of AI technologies and to encourage you to envision new, innovative applications of your own.
 
 ## Project Overview
 
-Our project is an AI-powered shopping assistant designed to leverage image processing and LLM agents for outfit recommendations. Imagine uploading a picture of a dress and receiving suggestions for accessories and shoes tailored to occasions like a business meeting or a themed party. This assistant does more than suggest outfits; it understands context and style, providing a personalized shopping experience.
+Our project is an AI-powered fashion assistant designed to leverage image processing and LLM agents for outfit recommendations. Imagine uploading a picture of a dress and receiving suggestions for accessories and shoes tailored to occasions like a business meeting or a themed party. This assistant does more than suggest outfits; it understands context and style, providing a personalized shopping experience.
 
 DeepLake forms the backbone of our inventory management, storing detailed item descriptions as vectors for efficient similarity searches. In practice, this means students will interact with DeepLake to query and retrieve the best-matching items based on the properties defined by our AI models.
 
@@ -276,7 +276,7 @@ The system functionality unfolds with the LLM agent at the helm. It begins by en
 
 ## **System integration and initial testing**
 
-The successful integration of various AI components into a seamless shopping assistant experience required a straightforward approach: encapsulating each function into a tool and crafting an agent to orchestrate these tools.
+The successful integration of various AI components into a seamless fashion assistant experience required a straightforward approach: encapsulating each function into a tool and crafting an agent to orchestrate these tools.
 
 ### **Agent creation and integration process**
 
@@ -288,7 +288,7 @@ llm = OpenAI(model="gpt-4", temperature=0.2)
 
 agent = OpenAIAgent.from_tools(
     system_prompt="""
-    You are a specialized shopping assistant.
+    You are a specialized fashion assistant.
 
     Customers will provide you with a piece of clothing, and you will generate a matching outfit.
 
@@ -333,7 +333,7 @@ Hello! How can I assist you today?
 >>> r = agent.chat("What are your tools?")
 STARTING TURN 1
 ---------------
-As a shopping assistant, I have two main tools at my disposal:
+As a fashion assistant, I have two main tools at my disposal:
 
 1. **Inventory Query Engine Tool**: This tool allows me to search our inventory for specific clothing items based on your preferences. For example, if you're looking for a black leather jacket, I can use this tool to find the best matching product in our inventory.
 
@@ -456,7 +456,7 @@ Having proved that the initial idea for the agent was feasible, it was time to a
 
 ## **Expanding functionality**
 
-The natural progression of our shopping assistant entails augmenting its capacity to factor in external elements such as weather conditions. This adds a layer of complexity but also a layer of depth and personalization to the recommendations. These enhancements came with their own sets of technical challenges.
+The natural progression of our fashion assistant entails augmenting its capacity to factor in external elements such as weather conditions. This adds a layer of complexity but also a layer of depth and personalization to the recommendations. These enhancements came with their own sets of technical challenges.
 
 ### **Adapting to the weather**
 
@@ -524,7 +524,7 @@ weather_tool_spec = CustomOpenWeatherMapToolSpec(key=OPEN_WEATHER_MAP_KEY)
 
 ### **User interaction and data handling**
 
-**Location input:** For accurate weather data, the shopping assistant often queries the user for their location. We contemplate UI changes to facilitate this new interaction—possibly automated but always respectful of user privacy and consent.
+**Location input:** For accurate weather data, the fashion assistant often queries the user for their location. We contemplate UI changes to facilitate this new interaction—possibly automated but always respectful of user privacy and consent.
 
 ```python
 >>> r = agent.chat("...")
@@ -552,7 +552,7 @@ It took us a little bit to remember that we needed this. At first, the LLM was c
 
 ## **User Interface (UI) development**
 
-In developing the user interface for our AI-powered shopping assistant, we wanted the platform to reflect the conversational nature of the agent's interactions. [Gradio](https://www.gradio.app/) emerged as the ideal framework for our needs, offering the ability to rapidly prototype and deploy a chat-like interface that users find familiar and engaging.
+In developing the user interface for our AI-powered fashion assistant, we wanted the platform to reflect the conversational nature of the agent's interactions. [Gradio](https://www.gradio.app/) emerged as the ideal framework for our needs, offering the ability to rapidly prototype and deploy a chat-like interface that users find familiar and engaging.
 
 ![Untitled](assets/Untitled%204.png)
 
@@ -566,17 +566,27 @@ In developing the user interface for our AI-powered shopping assistant, we wante
 - **Inline image display:** One of the initial technical challenges was presenting images seamlessly in the chat interface. Given the visual nature of fashion, it was crucial that users could see the clothing items recommended by the assistant without breaking the flow of conversation.
 - **Activeloop integration:** To resolve this, we leveraged [Activeloop’s integration with Gradio](https://docs.activeloop.ai/technical-details/visualizer-integration). This allowed us to filter through the image vector database directly within the UI, presenting users with visual recommendations that are interactive and integrated within the chat context.
 
-It was not trivial to get Activeloop's extension working for our project. Our solution consisted of having an HTML component in Gradio with an IFrame pointed to the image vector dataset. We could update the URL every time the chatbot answered, but we needed a way to get the product IDS from its answer. Ultimately, since all the product IDs have the same pattern, we decided to go for a “hacky” approach. Search the agent's response for the product IDs regex, and if there were more than 2 matches, update the iframe URL parameters. Otherwise, do nothing.
+Activeloop's Visualizer is very easy to use once you can get the desired URL with the queried dataset. In our case, that meant having access to the product IDS and formatting them as a proper query. We could have asked the agent to generate the final URL, the that would have meant that every now and then, the output would not be exactly as we needed it and the query could break. Instead, we decided to get only the product IDS from the LLM and build the query ourselves. Gradio allows us to update the URL of the IFrame every time a token is generated, but we needed a way to get the product IDS from the LLM answer, formatted them as URL expected by Activeloop, and update the HTML. Ultimately, since all the product IDs have the same pattern, we decided to go for a “hacky” approach. Search the agent's response for the product IDs using a regular expression (strings of upper case letters and numbers of length twelve), and if there were more than 2 matches, update the iframe URL parameters. Otherwise, do nothing.
+
+## **Limitations**
+
+The agent framework is a novel and fascinating methodology to build complex applications. Nevertheless, it comes with its own set of challenges. When thinking about deploying agents in production you should consider these additional steps:
+
+- Make individual tools as reliable as possible. In this project, most tools are simply wrappers about functions. Those functions assume that inputs behave fairly well, and otherwise fail. This can pose a problem if an agent does not properly format the inputs as the tool expect them. One solution of this would be to add input checks inside the function and return and error with what went wrong and prompting the agent to try again.
+- Monitoring, monitoring, monitoring. Agents can be quite complicated to debug. Using a framework to quickly log all calls to the underlying LLM, i.e. `gpt-4`, can greatly improve the building experience and allow you to quickly identify issues with your agent. In this regard, [LangSmith](https://www.langchain.com/langsmith) looks very promising.
+- Finally, if your agent is customer facing, you probably want to add guardrails to guarantee that the LLM remains on topic. Otherwise, you might find that your chat is being used for third-party purposes without your consent. Don't trust me? Look at what happened to Chevrolet.
+
+![Chevrolet chatbot misused by customers. Source: https://twitter.com/redteamwrangler/status/1736430198252356041/photo/1](assets/chevrolet.jpeg)
 
 ## **Conclusion**
 
-As we've journeyed through the intricate process of developing an AI-powered shopping assistant, the roles of DeepLake and LlamaIndex have proven pivotal. From the versatile data handling in DeepLake's vector database to the adaptive LLM agents orchestrated by LlamaIndex, these technologies have showcased their robust capabilities and the potential for innovation in the AI space.
+As we've journeyed through the intricate process of developing an AI-powered fashion assistant, the roles of DeepLake and LlamaIndex have proven pivotal. From the versatile data handling in DeepLake's vector database to the adaptive LLM agents orchestrated by LlamaIndex, these technologies have showcased their robust capabilities and the potential for innovation in the AI space.
 
-DeepLake has demonstrated its capacity to seamlessly manage and retrieve complex structures, enabling efficient and precise item matchings. Its architecture has been the backbone of the shopping assistant, proving that even complex data interactions can be handled with elegance and speed.
+DeepLake has demonstrated its capacity to seamlessly manage and retrieve complex structures, enabling efficient and precise item matchings. Its architecture has been the backbone of the fashion assistant, proving that even complex data interactions can be handled with elegance and speed.
 
-LlamaIndex, on the other hand, has been instrumental in empowering the shopping assistant with natural language processing and decision-making abilities. Its framework has enabled the LLM agents to interpret, engage, and personalize the shopping experience, charting new courses in user-AI interaction.
+LlamaIndex, on the other hand, has been instrumental in empowering the fashion assistant with natural language processing and decision-making abilities. Its framework has enabled the LLM agents to interpret, engage, and personalize the shopping experience, charting new courses in user-AI interaction.
 
-Looking beyond the shopping assistant itself, the potential uses for these technologies span myriad domains. The flexibility and power of DeepLake and LlamaIndex could drive innovation in fields ranging from healthcare to finance and from educational tools to creative industries.
+Looking beyond the fashion assistant itself, the potential uses for these technologies span myriad domains. The flexibility and power of DeepLake and LlamaIndex could drive innovation in fields ranging from healthcare to finance and from educational tools to creative industries.
 
 Your insights and feedback are crucial as we continue to navigate and expand the frontiers of artificial intelligence. We are particularly eager to hear your views on the innovative applications of vector databases and LLM frameworks. Additionally, your suggestions for topics you'd like us to delve into in future segments are highly appreciated.
 

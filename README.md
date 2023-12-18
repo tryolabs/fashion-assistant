@@ -1,4 +1,4 @@
-# Smart Shopping Assistant
+# Smart Fashion Assistant
 
 We are building an Outfit Recommender Agent that uses multiple tools.
 
