@@ -1,6 +1,6 @@
 # ****Building a smart shopping assistant with DeepLake and LlamaIndex****
 
-*Diego Kiedanski, AI Solutions Architect at Tryolabs, and Lucas Micol, Lead Machine Learning Engineer at Tryolabs, authored the following blog post.* 
+*Diego Kiedanski, Principal AI Consultant, and Lucas Micol, Lead Machine Learning Engineer at Tryolabs, authored the following blog post.* 
 
 In the ever-expanding landscape of artificial intelligence, vector databases stand as the unsung heroes, forming the foundation upon which many AI applications are built. These powerful databases provide the capacity to store and retrieve complex, high-dimensional data, enabling functionalities like Retrieval Augmented Generation (RAG) and sophisticated recommendation systems. 
 
@@ -298,7 +298,7 @@ agent = OpenAIAgent.from_tools(
 
     For each product of the outfit, search the inventory.
 
-    Incldue the total price of the recommended outfit.
+    Include the total price of the recommended outfit.
     """,
     tools=[
         inventory_query_engine_tool,
@@ -566,7 +566,7 @@ In developing the user interface for our AI-powered shopping assistant, we wante
 - **Inline image display:** One of the initial technical challenges was presenting images seamlessly in the chat interface. Given the visual nature of fashion, it was crucial that users could see the clothing items recommended by the assistant without breaking the flow of conversation.
 - **Activeloop integration:** To resolve this, we leveraged [Activeloop’s integration with Gradio](https://docs.activeloop.ai/technical-details/visualizer-integration). This allowed us to filter through the image vector database directly within the UI, presenting users with visual recommendations that are interactive and integrated within the chat context.
 
-It was not trivial to get Activeloop's extension working for our project. Our solution consisted of having an HTML component in Gradio with an IFrame pointed to the image vector dataset. We could update the URL every time the chatbot answered, but we needed a way to get the product IDS from its answer. Ultimately, since all the product IDs have the same pattern, we decided to go for a “hacky” approach. Search the agent's response for the product IDs regrex, and if there were more than 2 matches, update the iframe URL parameters. Otherwise, do nothing.
+It was not trivial to get Activeloop's extension working for our project. Our solution consisted of having an HTML component in Gradio with an IFrame pointed to the image vector dataset. We could update the URL every time the chatbot answered, but we needed a way to get the product IDS from its answer. Ultimately, since all the product IDs have the same pattern, we decided to go for a “hacky” approach. Search the agent's response for the product IDs regex, and if there were more than 2 matches, update the iframe URL parameters. Otherwise, do nothing.
 
 ## **Conclusion**
 

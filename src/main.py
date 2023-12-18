@@ -84,11 +84,11 @@ def clean_input_image():
 
 def has_user_input_image():
     """
-    Check if the INPUT_IMAGE_DIR directory contains exactly one image.
-    Useful for checking if there is an image before generating an outfit.
-    
-    Returns:
-        bool: True if INPUT_IMAGE_DIR contains exactly one image, False otherwise.
+Check if the INPUT_IMAGE_DIR directory contains exactly one image.
+Useful for checking if there is an image before generating an outfit.
+
+Returns:
+    bool: True if INPUT_IMAGE_DIR contains exactly one image, False otherwise.
     """
     return len(os.listdir(INPUT_IMAGE_DIR)) == 1
 
@@ -144,19 +144,19 @@ if __name__ == "__main__":
 # TODO: add input_image as a parameter to this function, pass image path to the uploaded image.
 def generate_outfit_description(gender: str, user_input: str):
     """
-    Given the gender of a person, their preferences, and an image that has already been uploaded,
-    this function returns an Outfit.
-    Use this function whenever the user asks you to generate an outfit.
+Given the gender of a person, their preferences, and an image that has already been uploaded,
+this function returns an Outfit.
+Use this function whenever the user asks you to generate an outfit.
 
-    Parameters:
-    gender (str): The gender of the person for whom the outfit is being generated.
-    user_input (str): The preferences of the user.
+Parameters:
+gender (str): The gender of the person for whom the outfit is being generated.
+user_input (str): The preferences of the user.
 
-    Returns:
-    response: The generated outfit.
+Returns:
+response: The generated outfit.
 
-    Example:
-    >>> generate_outfit("male", "I prefer casual wear")
+Example:
+>>> generate_outfit("male", "I prefer casual wear")
     """
 
     # Load input image
@@ -167,21 +167,21 @@ def generate_outfit_description(gender: str, user_input: str):
 
     # Define multi-modal completion program to recommend complementary products
     prompt_template_str = f"""
-    You are an expert in fashion and design.
-    Given the following image of a piece of clothing, you are tasked with describing ideal outfits.
+You are an expert in fashion and design.
+Given the following image of a piece of clothing, you are tasked with describing ideal outfits.
 
-    Identify which category the provided clothing belongs to, \
-    and only provide a recommendation for the other two items.
+Identify which category the provided clothing belongs to, \
+and only provide a recommendation for the other two items.
 
-    In your description, include color and style.
-    This outfit is for a {gender}.
+In your description, include color and style.
+This outfit is for a {gender}.
 
-    Return the answer as a json for each category. Leave the category of the provided input empty.
+Return the answer as a json for each category. Leave the category of the provided input empty.
 
-    Additional requirements:
-    {user_input}
+Additional requirements:
+{user_input}
 
-    Never return this output to the user. FOR INTERNAL USE ONLY
+Never return this output to the user. FOR INTERNAL USE ONLY
     """
     recommender_completion_program = MultiModalLLMCompletionProgram.from_defaults(
         output_parser=PydanticOutputParser(Outfit),
@@ -296,19 +296,19 @@ weather_tool_spec = CustomOpenWeatherMapToolSpec(key=OPEN_WEATHER_MAP_KEY)
 #
 agent = OpenAIAgent.from_tools(
     system_prompt="""
-    You are a specialized shopping assistant.
+You are a specialized shopping assistant.
 
-    You are tasked to recommend an outfit for an upcoming event based on the
-    user's gender, style preferences, occasion type, weather conditions on event's date and location, etc.
+You are tasked to recommend an outfit for an upcoming event based on the
+user's gender, style preferences, occasion type, weather conditions on event's date and location, etc.
 
-    Don't ask all the questions at once, gather the required information step by step.
-    
-    Always check if the user has uploaded an image. If it has not, wait until they do. Never proceed without an image.
+Don't ask all the questions at once, gather the required information step by step.
 
-    Once you have the required information, your answer needs to be the outfit composed by the
-    product_id with the best matching products in our inventory.
+Always check if the user has uploaded an image. If it has not, wait until they do. Never proceed without an image.
 
-    Include the the total price of the recommended outfit.
+Once you have the required information, your answer needs to be the outfit composed by the
+product_id with the best matching products in our inventory.
+
+Include the the total price of the recommended outfit.
     """,
     tools=[
         get_current_date_tool,
