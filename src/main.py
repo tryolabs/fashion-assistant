@@ -50,7 +50,7 @@ from src.utils import show_product_in_notebook
 # Output models
 #
 class Clothing(BaseModel):
-    """Data moel for clothing items"""
+    """Data model for clothing items"""
 
     name: str
     product_id: str
@@ -82,19 +82,20 @@ def clean_input_image():
         for file in os.listdir(INPUT_IMAGE_DIR):
             os.remove(os.path.join(INPUT_IMAGE_DIR, file))
 
+
 def has_user_input_image():
     """
-Check if the INPUT_IMAGE_DIR directory contains exactly one image.
-Useful for checking if there is an image before generating an outfit.
+    Check if the INPUT_IMAGE_DIR directory contains exactly one image.
+    Useful for checking if there is an image before generating an outfit.
 
-Returns:
-    bool: True if INPUT_IMAGE_DIR contains exactly one image, False otherwise.
+    Returns:
+        bool: True if INPUT_IMAGE_DIR contains exactly one image, False otherwise.
     """
     return len(os.listdir(INPUT_IMAGE_DIR)) == 1
 
-    
+
 check_input_image_tool = FunctionTool.from_defaults(fn=has_user_input_image)
-       
+
 
 # %%
 # LLM
@@ -141,22 +142,21 @@ if __name__ == "__main__":
 # %%
 # Outfit recommender tool
 #
-# TODO: add input_image as a parameter to this function, pass image path to the uploaded image.
 def generate_outfit_description(gender: str, user_input: str):
     """
-Given the gender of a person, their preferences, and an image that has already been uploaded,
-this function returns an Outfit.
-Use this function whenever the user asks you to generate an outfit.
+    Given the gender of a person, their preferences, and an image that has already been uploaded,
+    this function returns an Outfit.
+    Use this function whenever the user asks you to generate an outfit.
 
-Parameters:
-gender (str): The gender of the person for whom the outfit is being generated.
-user_input (str): The preferences of the user.
+    Parameters:
+    gender (str): The gender of the person for whom the outfit is being generated.
+    user_input (str): The preferences of the user.
 
-Returns:
-response: The generated outfit.
+    Returns:
+    response: The generated outfit.
 
-Example:
->>> generate_outfit("male", "I prefer casual wear")
+    Example:
+    >>> generate_outfit("male", "I prefer casual wear")
     """
 
     # Load input image
@@ -167,21 +167,21 @@ Example:
 
     # Define multi-modal completion program to recommend complementary products
     prompt_template_str = f"""
-You are an expert in fashion and design.
-Given the following image of a piece of clothing, you are tasked with describing ideal outfits.
+    You are an expert in fashion and design.
+    Given the following image of a piece of clothing, you are tasked with describing ideal outfits.
 
-Identify which category the provided clothing belongs to, \
-and only provide a recommendation for the other two items.
+    Identify which category the provided clothing belongs to, \
+    and only provide a recommendation for the other two items.
 
-In your description, include color and style.
-This outfit is for a {gender}.
+    In your description, include color and style.
+    This outfit is for a {gender}.
 
-Return the answer as a json for each category. Leave the category of the provided input empty.
+    Return the answer as a json for each category. Leave the category of the provided input empty.
 
-Additional requirements:
-{user_input}
+    Additional requirements:
+    {user_input}
 
-Never return this output to the user. FOR INTERNAL USE ONLY
+    Never return this output to the user. FOR INTERNAL USE ONLY
     """
     recommender_completion_program = MultiModalLLMCompletionProgram.from_defaults(
         output_parser=PydanticOutputParser(Outfit),
@@ -253,7 +253,6 @@ class CustomOpenWeatherMapToolSpec(OpenWeatherMapToolSpec):
                 The desired date to get the weather for.
         """
         from pyowm.commons.exceptions import NotFoundError
-        from pyowm.utils import timestamps
 
         try:
             forecast = self._mgr.forecast_at_place(location, "3h")
@@ -265,10 +264,10 @@ class CustomOpenWeatherMapToolSpec(OpenWeatherMapToolSpec):
         temperature = w.temperature(self.temp_units)
         temp_unit = "°C" if self.temp_units == "celsius" else "°F"
 
-        # TODO: this isn't working.. Error: 'max' key.
         try:
-            temp_str = self._format_forecast_temp(temperature, temp_unit)
+            temp_str = self._format_current_temp(temperature, temp_unit)
         except:
+            # it format fails, return the raw response
             logging.exception(f"Could _format_forecast_temp {temperature}")
             temp_str = str(temperature)
 
@@ -308,7 +307,7 @@ Always check if the user has uploaded an image. If it has not, wait until they d
 Once you have the required information, your answer needs to be the outfit composed by the
 product_id with the best matching products in our inventory.
 
-Include the the total price of the recommended outfit.
+Include the total price of the recommended outfit.
     """,
     tools=[
         get_current_date_tool,
